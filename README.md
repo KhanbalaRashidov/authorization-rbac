@@ -18,7 +18,7 @@ A production-grade **Authorization Microservice** written in **Golang**, designe
 
 ## 🧱 Tech Stack
 
-* **Golang 1.21+**
+* **Golang 1.24+**
 * **Fiber** (web framework)
 * **GORM** (ORM)
 * **RabbitMQ** (message broker)
