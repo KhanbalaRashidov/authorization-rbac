@@ -19,6 +19,22 @@ func (h *AuthorizeHandler) RegisterRoutes(app *fiber.App) {
 	app.Get("/authorize", h.Authorize)
 }
 
+// Authorize godoc
+// @Summary JWT və RBAC yoxlama
+// @Description Token JWT ilə doğrulanır. İstəyə əsasən blacklist və RBAC permission da yoxlanır.
+// @Tags Authorization
+// @Accept json
+// @Produce json
+// @Param Authorization header string true "Bearer {token}"
+// @Param check_jwt query bool true "JWT imzası yoxlansın? (default: true)"
+// @Param check_blacklist query bool true "Token blacklistedir? (default: true)"
+// @Param check_rbac query bool false "RBAC permission yoxlansın? (default: false)"
+// @Param privilege query string false "RBAC üçün icazə adı (məs: DELETE_USER)"
+// @Success 200 {string} string "OK"
+// @Failure 400 {string} string "Privilege is required for RBAC check"
+// @Failure 401 {string} string "Unauthorized"
+// @Failure 403 {string} string "Permission denied"
+// @Router /authorize [get]
 func (h *AuthorizeHandler) Authorize(c *fiber.Ctx) error {
 	// 1. Token oxu
 	authHeader := c.Get("Authorization")

@@ -1,9 +1,247 @@
 basePath: /
+definitions:
+  model.Permission:
+    type: object
+  model.Role:
+    type: object
 host: localhost:8000
 info:
   contact: {}
   description: Role-Permission və JWT yoxlama mikroservisi
   title: AuthZ API
   version: "1.0"
-paths: {}
+paths:
+  /authorize:
+    get:
+      consumes:
+      - application/json
+      description: Token JWT ilə doğrulanır. İstəyə əsasən blacklist və RBAC permission
+        da yoxlanır.
+      parameters:
+      - description: Bearer {token}
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: 'JWT imzası yoxlansın? (default: true)'
+        in: query
+        name: check_jwt
+        required: true
+        type: boolean
+      - description: 'Token blacklistedir? (default: true)'
+        in: query
+        name: check_blacklist
+        required: true
+        type: boolean
+      - description: 'RBAC permission yoxlansın? (default: false)'
+        in: query
+        name: check_rbac
+        type: boolean
+      - description: 'RBAC üçün icazə adı (məs: DELETE_USER)'
+        in: query
+        name: privilege
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Privilege is required for RBAC check
+          schema:
+            type: string
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+        "403":
+          description: Permission denied
+          schema:
+            type: string
+      summary: JWT və RBAC yoxlama
+      tags:
+      - Authorization
+  /permissions:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.Permission'
+            type: array
+        "500":
+          description: Server error
+          schema:
+            type: string
+      summary: Bütün permission-ları qaytarır
+      tags:
+      - Permission
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Yeni permission
+        in: body
+        name: permission
+        required: true
+        schema:
+          $ref: '#/definitions/model.Permission'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Permission'
+        "400":
+          description: Invalid body
+          schema:
+            type: string
+        "500":
+          description: Server error
+          schema:
+            type: string
+      summary: Yeni permission yaradır
+      tags:
+      - Permission
+  /permissions/{id}:
+    delete:
+      parameters:
+      - description: Permission ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "204":
+          description: No Content
+          schema:
+            type: string
+        "500":
+          description: Server error
+          schema:
+            type: string
+      summary: Permission-u ID ilə silir
+      tags:
+      - Permission
+  /roles:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.Role'
+            type: array
+        "500":
+          description: Server error
+          schema:
+            type: string
+      summary: Mövcud bütün rolları qaytarır
+      tags:
+      - Role
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Yeni rol
+        in: body
+        name: role
+        required: true
+        schema:
+          $ref: '#/definitions/model.Role'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Role'
+        "400":
+          description: Invalid body
+          schema:
+            type: string
+        "500":
+          description: Server error
+          schema:
+            type: string
+      summary: Yeni rol yaradır
+      tags:
+      - Role
+  /roles/{id}:
+    delete:
+      parameters:
+      - description: Role ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "204":
+          description: No Content
+          schema:
+            type: string
+        "500":
+          description: Server error
+          schema:
+            type: string
+      summary: Rolu ID-yə görə silir
+      tags:
+      - Role
+  /roles/{roleID}/permissions/{permID}:
+    delete:
+      parameters:
+      - description: Role ID
+        in: path
+        name: roleID
+        required: true
+        type: integer
+      - description: Permission ID
+        in: path
+        name: permID
+        required: true
+        type: integer
+      responses:
+        "204":
+          description: No Content
+          schema:
+            type: string
+        "500":
+          description: Server error
+          schema:
+            type: string
+      summary: Role-dan permission silir
+      tags:
+      - Role-Permission
+    post:
+      parameters:
+      - description: Role ID
+        in: path
+        name: roleID
+        required: true
+        type: integer
+      - description: Permission ID
+        in: path
+        name: permID
+        required: true
+        type: integer
+      responses:
+        "204":
+          description: No Content
+          schema:
+            type: string
+        "500":
+          description: Server error
+          schema:
+            type: string
+      summary: Role-a permission təyin edir
+      tags:
+      - Role-Permission
 swagger: "2.0"
