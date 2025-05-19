@@ -73,7 +73,7 @@ go install github.com/swaggo/swag/cmd/swag@latest
 swag init -g cmd/main.go -o docs
 
 # Run via Docker Compose
-docker compose -f docker-compose.local.yml up --build
+docker compose  up --build -d
 ```
 
 Access Swagger UI at: [http://localhost:8000/swagger/index.html](http://localhost:8000/swagger/index.html)
