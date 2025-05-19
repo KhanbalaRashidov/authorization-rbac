@@ -35,6 +35,22 @@ func (r *PermissionRepo) Create(p *model.Permission) error {
 	return r.db.Create(p).Error
 }
 
+func (r *PermissionRepo) Update(role *model.Permission) error {
+	return r.db.Save(role).Error
+}
+
 func (r *PermissionRepo) Delete(id uint) error {
 	return r.db.Delete(&model.Permission{}, id).Error
+}
+
+func (r *PermissionRepo) GetAllWithRoles() ([]model.Permission, error) {
+	var perms []model.Permission
+	err := r.db.Preload("Roles").Find(&perms).Error
+	return perms, err
+}
+
+func (r *PermissionRepo) GetRolesByPermissionID(id uint) ([]model.Role, error) {
+	var perm model.Permission
+	err := r.db.Preload("Roles").First(&perm, id).Error
+	return perm.Roles, err
 }

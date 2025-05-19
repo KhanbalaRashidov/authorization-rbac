@@ -109,6 +109,24 @@ paths:
       summary: Yeni permission yaradır
       tags:
       - Permission
+  /permissions-with-roles:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.Permission'
+            type: array
+        "500":
+          description: Server error
+          schema:
+            type: string
+      summary: Permission-ları və aid olduqları rolları qaytarır
+      tags:
+      - Permission
   /permissions/{id}:
     delete:
       parameters:
@@ -127,6 +145,71 @@ paths:
           schema:
             type: string
       summary: Permission-u ID ilə silir
+      tags:
+      - Permission
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Permission ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Yenilənmiş permission məlumatı
+        in: body
+        name: permission
+        required: true
+        schema:
+          $ref: '#/definitions/model.Permission'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Permission'
+        "400":
+          description: Invalid input
+          schema:
+            type: string
+        "404":
+          description: Permission not found
+          schema:
+            type: string
+        "500":
+          description: Server error
+          schema:
+            type: string
+      summary: Mövcud permission-u yeniləyir
+      tags:
+      - Permission
+  /permissions/{id}/roles:
+    get:
+      parameters:
+      - description: Permission ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.Role'
+            type: array
+        "400":
+          description: Invalid ID
+          schema:
+            type: string
+        "500":
+          description: Server error
+          schema:
+            type: string
+      summary: Verilmiş permission ID üçün aid olduğu rolları qaytarır
       tags:
       - Permission
   /roles:
@@ -175,6 +258,24 @@ paths:
       summary: Yeni rol yaradır
       tags:
       - Role
+  /roles-with-permissions:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.Role'
+            type: array
+        "500":
+          description: Server error
+          schema:
+            type: string
+      summary: Rolları və onlara bağlı permission-ları qaytarır
+      tags:
+      - Role
   /roles/{id}:
     delete:
       parameters:
@@ -193,6 +294,71 @@ paths:
           schema:
             type: string
       summary: Rolu ID-yə görə silir
+      tags:
+      - Role
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Role ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Yenilənmiş rol məlumatı
+        in: body
+        name: role
+        required: true
+        schema:
+          $ref: '#/definitions/model.Role'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Role'
+        "400":
+          description: Invalid input
+          schema:
+            type: string
+        "404":
+          description: Role not found
+          schema:
+            type: string
+        "500":
+          description: Server error
+          schema:
+            type: string
+      summary: Mövcud rolu yeniləyir
+      tags:
+      - Role
+  /roles/{id}/permissions:
+    get:
+      parameters:
+      - description: Role ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.Permission'
+            type: array
+        "400":
+          description: Invalid ID
+          schema:
+            type: string
+        "500":
+          description: Server error
+          schema:
+            type: string
+      summary: Verilmiş role ID üçün permission-ları qaytarır
       tags:
       - Role
   /roles/{roleID}/permissions/{permID}:
