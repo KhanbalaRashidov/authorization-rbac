@@ -1,0 +1,9 @@
+basePath: /
+host: localhost:8000
+info:
+  contact: {}
+  description: Role-Permission və JWT yoxlama mikroservisi
+  title: AuthZ API
+  version: "1.0"
+paths: {}
+swagger: "2.0"
