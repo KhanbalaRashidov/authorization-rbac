@@ -83,7 +83,7 @@ func (f *fileKeyProvider) GetPublicKey(kid string) (*rsa.PublicKey, error) {
 	}
 	f.mu.RUnlock()
 
-	filePath := filepath.Join(f.basePath, kid+".pem")
+	filePath := filepath.Join(f.basePath, "public.pem")
 	data, err := os.ReadFile(filePath)
 	if err != nil {
 		return nil, fmt.Errorf("unable to read key file: %w", err)
