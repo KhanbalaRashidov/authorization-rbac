@@ -16,6 +16,7 @@ services:
       PORT: 8000
     volumes:
       - ./keys:/app/keys:ro
+      - ./docs:/app/docs:ro
     depends_on:
       - postgres
       - rabbitmq

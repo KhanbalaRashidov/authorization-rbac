@@ -74,8 +74,8 @@ func (s *RBACService) PublishCacheReload() {
 
 	body, _ := json.Marshal(event)
 	err := s.rabbitMQChannel.Publish(
-		"rbac.update.fanout", // exchange
-		"",                   // routing key
+		"rbac.update.fanout", // Exchange
+		"",                   // Routing key
 		false,
 		false,
 		amqp091.Publishing{
@@ -84,6 +84,8 @@ func (s *RBACService) PublishCacheReload() {
 		},
 	)
 	if err != nil {
-		log.Println("Failed to publish RBAC cache update:", err)
+		log.Println("❌ Failed to publish RBAC_CACHE_RELOAD event:", err)
+	} else {
+		log.Println("📤 RBAC_CACHE_RELOAD event published")
 	}
 }

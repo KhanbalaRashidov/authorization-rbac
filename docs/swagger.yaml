@@ -1,5 +1,13 @@
 basePath: /
 definitions:
+  handler.BlockTokenRequest:
+    properties:
+      exp:
+        description: Unix timestamp
+        type: integer
+      jti:
+        type: string
+    type: object
   model.Permission:
     type: object
   model.Role:
@@ -11,6 +19,33 @@ info:
   title: AuthZ API
   version: "1.0"
 paths:
+  /admin/block-token:
+    post:
+      consumes:
+      - application/json
+      description: Admin tərəfindən manual olaraq JWT `jti` və `exp`-ə əsasən tokenin
+        blackliste əlavə olunması
+      parameters:
+      - description: JTI və Exp göndər
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handler.BlockTokenRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Token blocked
+          schema:
+            type: string
+        "400":
+          description: Validation error
+          schema:
+            type: string
+      summary: Admin token bloklama
+      tags:
+      - Admin
   /authorize:
     get:
       consumes:
@@ -61,6 +96,31 @@ paths:
           schema:
             type: string
       summary: JWT və RBAC yoxlama
+      tags:
+      - Authorization
+  /logout:
+    post:
+      consumes:
+      - application/json
+      description: İstifadəçi tokenini blackliste əlavə edir (logout əməliyyatı).
+      parameters:
+      - description: Bearer {token}
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Logged out
+          schema:
+            type: string
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+      summary: Logout (Tokeni deaktiv edir)
       tags:
       - Authorization
   /permissions:

@@ -4,15 +4,18 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"ms-authz/internal/domain/model"
 	"ms-authz/internal/domain/repository"
+	"ms-authz/internal/service"
+	"ms-authz/internal/dto"
 	"strconv"
 )
 
 type RBACAdminHandler struct {
 	UoW repository.UnitOfWork
+	RBAC *service.RBACService
 }
 
-func NewRBACAdminHandler(uow repository.UnitOfWork) *RBACAdminHandler {
-	return &RBACAdminHandler{UoW: uow}
+func NewRBACAdminHandler(uow repository.UnitOfWork, rbacService *service.RBACService) *RBACAdminHandler {
+	return &RBACAdminHandler{UoW: uow, RBAC: rbacService}
 }
 
 func (h *RBACAdminHandler) RegisterRoutes(app *fiber.App) {
@@ -52,6 +55,8 @@ func (h *RBACAdminHandler) CreateRole(c *fiber.Ctx) error {
 	if err := h.UoW.RoleRepo().Create(&role); err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
+
+	h.RBAC.PublishCacheReload()
 	return c.JSON(role)
 }
 
@@ -67,8 +72,18 @@ func (h *RBACAdminHandler) GetRoles(c *fiber.Ctx) error {
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
-	return c.JSON(roles)
+
+	var result []dto.RoleDTO
+	for _, r := range roles {
+		result = append(result, dto.RoleDTO{
+			ID:   r.ID,
+			Name: r.Name,
+		})
+	}
+
+	return c.JSON(result)
 }
+
 
 // UpdateRole godoc
 // @Summary Mövcud rolu yeniləyir
@@ -104,6 +119,7 @@ func (h *RBACAdminHandler) UpdateRole(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
 
+	h.RBAC.PublishCacheReload()
 	return c.JSON(role)
 }
 
@@ -119,6 +135,8 @@ func (h *RBACAdminHandler) DeleteRole(c *fiber.Ctx) error {
 	if err := h.UoW.RoleRepo().Delete(uint(id)); err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
+
+	h.RBAC.PublishCacheReload()
 	return c.SendStatus(fiber.StatusNoContent)
 }
 
@@ -140,6 +158,8 @@ func (h *RBACAdminHandler) CreatePermission(c *fiber.Ctx) error {
 	if err := h.UoW.PermissionRepo().Create(&p); err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
+
+	h.RBAC.PublishCacheReload()
 	return c.JSON(p)
 }
 
@@ -155,8 +175,18 @@ func (h *RBACAdminHandler) GetPermissions(c *fiber.Ctx) error {
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
-	return c.JSON(perms)
+
+	var result []dto.PermissionDTO
+	for _, p := range perms {
+		result = append(result, dto.PermissionDTO{
+			ID:   p.ID,
+			Name: p.Name,
+		})
+	}
+
+	return c.JSON(result)
 }
+
 
 // UpdatePermission godoc
 // @Summary Mövcud permission-u yeniləyir
@@ -192,6 +222,7 @@ func (h *RBACAdminHandler) UpdatePermission(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
 
+	h.RBAC.PublishCacheReload()
 	return c.JSON(perm)
 }
 
@@ -207,6 +238,8 @@ func (h *RBACAdminHandler) DeletePermission(c *fiber.Ctx) error {
 	if err := h.UoW.PermissionRepo().Delete(uint(id)); err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
+
+	h.RBAC.PublishCacheReload()
 	return c.SendStatus(fiber.StatusNoContent)
 }
 
@@ -224,6 +257,8 @@ func (h *RBACAdminHandler) AssignPermission(c *fiber.Ctx) error {
 	if err := h.UoW.RolePermissionRepo().AddPermission(uint(roleID), uint(permID)); err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
+
+	h.RBAC.PublishCacheReload()
 	return c.SendStatus(fiber.StatusNoContent)
 }
 
@@ -241,6 +276,8 @@ func (h *RBACAdminHandler) RemovePermission(c *fiber.Ctx) error {
 	if err := h.UoW.RolePermissionRepo().RemovePermission(uint(roleID), uint(permID)); err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
+
+	h.RBAC.PublishCacheReload()
 	return c.SendStatus(fiber.StatusNoContent)
 }
 
@@ -256,8 +293,25 @@ func (h *RBACAdminHandler) GetRolesWithPermissions(c *fiber.Ctx) error {
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
-	return c.JSON(roles)
+
+	var result []dto.RoleWithPermissionsDTO
+	for _, r := range roles {
+		roleDTO := dto.RoleWithPermissionsDTO{
+			ID:   r.ID,
+			Name: r.Name,
+		}
+		for _, p := range r.Permissions {
+			roleDTO.Permissions = append(roleDTO.Permissions, dto.PermissionDTO{
+				ID:   p.ID,
+				Name: p.Name,
+			})
+		}
+		result = append(result, roleDTO)
+	}
+
+	return c.JSON(result)
 }
+
 
 // GetPermissionsWithRoles godoc
 // @Summary Permission-ları və aid olduqları rolları qaytarır
@@ -271,7 +325,23 @@ func (h *RBACAdminHandler) GetPermissionsWithRoles(c *fiber.Ctx) error {
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
-	return c.JSON(perms)
+
+	var result []dto.PermissionWithRolesDTO
+	for _, p := range perms {
+		permDTO := dto.PermissionWithRolesDTO{
+			ID:   p.ID,
+			Name: p.Name,
+		}
+		for _, r := range p.Roles {
+			permDTO.Roles = append(permDTO.Roles, dto.RoleDTO{
+				ID:   r.ID,
+				Name: r.Name,
+			})
+		}
+		result = append(result, permDTO)
+	}
+
+	return c.JSON(result)
 }
 
 // GetPermissionsByRoleID godoc
@@ -294,7 +364,15 @@ func (h *RBACAdminHandler) GetPermissionsByRoleID(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
 
-	return c.JSON(perms)
+	var result []dto.PermissionDTO
+	for _, p := range perms {
+		result = append(result, dto.PermissionDTO{
+			ID:   p.ID,
+			Name: p.Name,
+		})
+	}
+
+	return c.JSON(result)
 }
 
 // GetRolesByPermissionID godoc
@@ -317,5 +395,13 @@ func (h *RBACAdminHandler) GetRolesByPermissionID(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
 
-	return c.JSON(roles)
+	var result []dto.RoleDTO
+	for _, r := range roles {
+		result = append(result, dto.RoleDTO{
+			ID:   r.ID,
+			Name: r.Name,
+		})
+	}
+
+	return c.JSON(result)
 }

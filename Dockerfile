@@ -19,8 +19,8 @@ FROM alpine:latest
 WORKDIR /app
 
 COPY --from=builder /app/ms-authz .
-COPY --from=builder /app/keys ./keys
-COPY --from=builder /app/docs ./docs
+#COPY --from=builder /app/keys ./keys
+#COPY --from=builder /app/docs ./docs
 
 RUN apk add --no-cache ca-certificates
 

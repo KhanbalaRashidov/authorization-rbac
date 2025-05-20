@@ -62,10 +62,10 @@ func main() {
 
 	app := fiber.New()
 
-	authorizeHandler := handler.NewAuthorizeHandler(authService, rbacService)
+	authorizeHandler := handler.NewAuthorizeHandler(authService, rbacService,mqConn.Channel)
 	authorizeHandler.RegisterRoutes(app)
 
-	rbacAdminHandler := handler.NewRBACAdminHandler(uow)
+	rbacAdminHandler := handler.NewRBACAdminHandler(uow, rbacService)
 	rbacAdminHandler.RegisterRoutes(app)
 
 	app.Use(logger.New())

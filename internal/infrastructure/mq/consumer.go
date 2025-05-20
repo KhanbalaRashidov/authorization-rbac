@@ -4,44 +4,57 @@ import (
 	"encoding/json"
 	"log"
 	"ms-authz/internal/service"
-
 	"github.com/rabbitmq/amqp091-go"
 )
 
 func StartConsumers(ch *amqp091.Channel, authSvc *service.AuthService, rbacSvc *service.RBACService) {
-	// Token Blacklist Consumer
-	tokenQ, _ := ch.QueueDeclare("", false, true, true, false, nil)
-	_ = ch.QueueBind(tokenQ.Name, "", "auth.tokens.fanout", false, nil)
-	msgs1, _ := ch.Consume(tokenQ.Name, "", true, false, false, false, nil)
+	declareExchangeAndQueue(ch, "auth.tokens.fanout", "auth.tokens.queue", func(d amqp091.Delivery) {
+		var e struct {
+			Event string `json:"event"`
+			JTI   string `json:"jti"`
+			Exp   int64  `json:"exp"`
+		}
+		if err := json.Unmarshal(d.Body, &e); err == nil && e.Event == "TOKEN_BLACKLISTED" {
+			log.Println("✅ Received TOKEN_BLACKLISTED")
+			authSvc.HandleBlacklistEvent(e.JTI, e.Exp)
+		}
+	})
+
+	declareExchangeAndQueue(ch, "rbac.update.fanout", "rbac.update.queue", func(d amqp091.Delivery) {
+		var e struct {
+			Event string `json:"event"`
+		}
+		if err := json.Unmarshal(d.Body, &e); err == nil && e.Event == "RBAC_CACHE_RELOAD" {
+			log.Println("✅ Received RBAC_CACHE_RELOAD")
+			rbacSvc.ReloadCache()
+		}
+	})
+}
+
+func declareExchangeAndQueue(ch *amqp091.Channel, exchangeName, queueName string, handle func(amqp091.Delivery)) {
+	// Declare durable fanout exchange
+	must(ch.ExchangeDeclare(exchangeName, "fanout", true, false, false, false, nil))
+
+	// Declare durable queue
+	queue, err := ch.QueueDeclare(queueName, true, false, false, false, nil)
+	must(err)
+
+	// Bind queue to exchange
+	must(ch.QueueBind(queue.Name, "", exchangeName, false, nil))
+
+	// Start consumer
+	msgs, err := ch.Consume(queue.Name, "", true, false, false, false, nil)
+	must(err)
 
 	go func() {
-		for d := range msgs1 {
-			var event struct {
-				Event string `json:"event"`
-				JTI   string `json:"jti"`
-				Exp   int64  `json:"exp"`
-			}
-			if err := json.Unmarshal(d.Body, &event); err == nil && event.Event == "TOKEN_BLACKLISTED" {
-				log.Println("[MQ] Received TOKEN_BLACKLISTED event")
-				authSvc.HandleBlacklistEvent(event.JTI, event.Exp)
-			}
+		for d := range msgs {
+			handle(d)
 		}
 	}()
+}
 
-	// RBAC Update Consumer
-	rbacQ, _ := ch.QueueDeclare("", false, true, true, false, nil)
-	_ = ch.QueueBind(rbacQ.Name, "", "rbac.update.fanout", false, nil)
-	msgs2, _ := ch.Consume(rbacQ.Name, "", true, false, false, false, nil)
-
-	go func() {
-		for d := range msgs2 {
-			var event struct {
-				Event string `json:"event"`
-			}
-			if err := json.Unmarshal(d.Body, &event); err == nil && event.Event == "RBAC_CACHE_RELOAD" {
-				log.Println("[MQ] Received RBAC_CACHE_RELOAD event")
-				rbacSvc.ReloadCache()
-			}
-		}
-	}()
+func must(err error) {
+	if err != nil {
+		log.Fatalf("❌ %v", err)
+	}
 }

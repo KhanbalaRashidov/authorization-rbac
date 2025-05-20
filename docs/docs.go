@@ -15,6 +15,46 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/admin/block-token": {
+            "post": {
+                "description": "Admin tərəfindən manual olaraq JWT ` + "`" + `jti` + "`" + ` və ` + "`" + `exp` + "`" + `-ə əsasən tokenin blackliste əlavə olunması",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin"
+                ],
+                "summary": "Admin token bloklama",
+                "parameters": [
+                    {
+                        "description": "JTI və Exp göndər",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handler.BlockTokenRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Token blocked",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Validation error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/authorize": {
             "get": {
                 "description": "Token JWT ilə doğrulanır. İstəyə əsasən blacklist və RBAC permission da yoxlanır.",
@@ -84,6 +124,44 @@ const docTemplate = `{
                     },
                     "403": {
                         "description": "Permission denied",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/logout": {
+            "post": {
+                "description": "İstifadəçi tokenini blackliste əlavə edir (logout əməliyyatı).",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Authorization"
+                ],
+                "summary": "Logout (Tokeni deaktiv edir)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer {token}",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Logged out",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
                         "schema": {
                             "type": "string"
                         }
@@ -625,6 +703,18 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "handler.BlockTokenRequest": {
+            "type": "object",
+            "properties": {
+                "exp": {
+                    "description": "Unix timestamp",
+                    "type": "integer"
+                },
+                "jti": {
+                    "type": "string"
+                }
+            }
+        },
         "model.Permission": {
             "type": "object"
         },

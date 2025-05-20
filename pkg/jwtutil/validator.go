@@ -18,7 +18,6 @@ import (
 type Claims struct {
 	Role string `json:"role"`
 	JTI  string `json:"jti"`
-	Exp  int64  `json:"exp"`
 	jwt.RegisteredClaims
 }
 
@@ -27,7 +26,12 @@ type PublicKeyProvider interface {
 }
 
 func ParseTokenHeader(tokenStr string) (*Claims, string, error) {
+
+	//fmt.Println("RAW TOKEN:", tokenStr)
+	//fmt.Println("TRIMMED :", strings.TrimSpace(tokenStr))
+
 	parts := strings.Split(tokenStr, ".")
+	//fmt.Println("DEBUG: token parts =", len(parts)) //
 	if len(parts) != 3 {
 		return nil, "", errors.New("invalid token format")
 	}
@@ -83,7 +87,7 @@ func (f *fileKeyProvider) GetPublicKey(kid string) (*rsa.PublicKey, error) {
 	}
 	f.mu.RUnlock()
 
-	filePath := filepath.Join(f.basePath, "public.pem")
+	filePath := filepath.Join(f.basePath, kid + ".pem")
 	data, err := os.ReadFile(filePath)
 	if err != nil {
 		return nil, fmt.Errorf("unable to read key file: %w", err)
