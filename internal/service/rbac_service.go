@@ -1,25 +1,23 @@
 package service
 
 import (
-	"encoding/json"
 	"log"
 	"ms-authz/internal/domain/model"
 	"ms-authz/internal/domain/repository"
 	"sync"
-
-	"github.com/rabbitmq/amqp091-go"
+	"ms-authz/internal/infrastructure/mq"
 )
 
 type RBACService struct {
 	uow             repository.UnitOfWork
 	cache           sync.Map // map[roleName][]permissionCode
-	rabbitMQChannel *amqp091.Channel
+	publisher mq.Publisher
 }
 
-func NewRBACService(uow repository.UnitOfWork, rabbitCh *amqp091.Channel) *RBACService {
+func NewRBACService(uow repository.UnitOfWork, publisher mq.Publisher) *RBACService {
 	s := &RBACService{
 		uow:             uow,
-		rabbitMQChannel: rabbitCh,
+		publisher: publisher,
 	}
 	s.LoadCache()
 	return s
@@ -65,27 +63,20 @@ func (s *RBACService) ReloadCache() {
 }
 
 // MQ ilə digər instansiyalara xəbər göndərir
-func (s *RBACService) PublishCacheReload() {
-	event := struct {
-		Event string `json:"event"`
-	}{
-		Event: "RBAC_CACHE_RELOAD",
+//func (s *RBACService) PublishCacheReload() {
+//	s.PublishCacheEvent("RBAC_CACHE_RELOAD", map[string]any{})
+//}
+
+func (s *RBACService) PublishCacheEvent(event string, payload map[string]any) {
+	message := map[string]any{
+		"event": event,
+	}
+	for k, v := range payload {
+		message[k] = v
 	}
 
-	body, _ := json.Marshal(event)
-	err := s.rabbitMQChannel.Publish(
-		"rbac.update.fanout", // Exchange
-		"",                   // Routing key
-		false,
-		false,
-		amqp091.Publishing{
-			ContentType: "application/json",
-			Body:        body,
-		},
-	)
-	if err != nil {
-		log.Println("❌ Failed to publish RBAC_CACHE_RELOAD event:", err)
-	} else {
-		log.Println("📤 RBAC_CACHE_RELOAD event published")
-	}
+	_ = s.publisher.PublishEvent("rbac.update.fanout", message, []string{
+		"rbac.cache.sync.queue",
+		"rbac.audit.log.queue",
+	})
 }

@@ -4,22 +4,20 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"ms-authz/internal/service"
 	"strings"
-	"github.com/rabbitmq/amqp091-go"
-	"encoding/json"
-	"log"
+	"ms-authz/internal/infrastructure/mq"
 )
 
 type AuthorizeHandler struct {
 	Auth *service.AuthService
 	RBAC *service.RBACService
-	RabbitMQCh  *amqp091.Channel
+	publisher mq.Publisher
 }
 
-func NewAuthorizeHandler(auth *service.AuthService, rbac *service.RBACService, rabbitCh *amqp091.Channel) *AuthorizeHandler {
+func NewAuthorizeHandler(auth *service.AuthService, rbac *service.RBACService, publisher mq.Publisher) *AuthorizeHandler {
 	return &AuthorizeHandler{
 		Auth:        auth,
 		RBAC:        rbac,
-		RabbitMQCh:  rabbitCh,
+		publisher: publisher,
 	}
 }
 
@@ -149,20 +147,8 @@ func (h *AuthorizeHandler) publishBlacklistEvent(jti string, exp int64) {
 		Exp:   exp,
 	}
 
-	body, _ := json.Marshal(event)
-	err := h.RabbitMQCh.Publish(
-		"auth.tokens.fanout", // Exchange
-		"",                   // Routing key (ignored for fanout)
-		false,
-		false,
-		amqp091.Publishing{
-			ContentType: "application/json",
-			Body:        body,
-		},
-	)
-	if err != nil {
-		log.Println("❌ Failed to publish TOKEN_BLACKLISTED event:", err)
-	} else {
-		log.Println("📤 TOKEN_BLACKLISTED event published")
-	}
+	_ = h.publisher.PublishEvent("auth.tokens.fanout", event, []string{
+		"blacklist.cache.queue",
+		"blacklist.audit.queue",
+	})
 }

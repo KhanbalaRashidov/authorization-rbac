@@ -56,7 +56,11 @@ func (h *RBACAdminHandler) CreateRole(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
 
-	h.RBAC.PublishCacheReload()
+	h.RBAC.PublishCacheEvent("RBAC_ROLE_CREATED", map[string]any{
+		"role_id": role.ID,
+		"role_name": role.Name,
+	})
+
 	return c.JSON(role)
 }
 
@@ -119,7 +123,11 @@ func (h *RBACAdminHandler) UpdateRole(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
 
-	h.RBAC.PublishCacheReload()
+	h.RBAC.PublishCacheEvent("RBAC_ROLE_UPDATED", map[string]any{
+		"role_id": role.ID,
+		"new_name": updated.Name,
+	})
+
 	return c.JSON(role)
 }
 
@@ -136,7 +144,10 @@ func (h *RBACAdminHandler) DeleteRole(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
 
-	h.RBAC.PublishCacheReload()
+	h.RBAC.PublishCacheEvent("RBAC_ROLE_DELETED", map[string]any{
+		"role_id": id,
+	})
+
 	return c.SendStatus(fiber.StatusNoContent)
 }
 
@@ -159,7 +170,11 @@ func (h *RBACAdminHandler) CreatePermission(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
 
-	h.RBAC.PublishCacheReload()
+	h.RBAC.PublishCacheEvent("RBAC_PERMISSION_CREATED", map[string]any{
+		"perm_id": p.ID,
+		"perm_name": p.Name,
+	})
+
 	return c.JSON(p)
 }
 
@@ -222,7 +237,11 @@ func (h *RBACAdminHandler) UpdatePermission(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
 
-	h.RBAC.PublishCacheReload()
+	h.RBAC.PublishCacheEvent("RBAC_PERMISSION_UPDATED", map[string]any{
+		"perm_id": perm.ID,
+		"new_name": updated.Name,
+	})
+
 	return c.JSON(perm)
 }
 
@@ -239,7 +258,10 @@ func (h *RBACAdminHandler) DeletePermission(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
 
-	h.RBAC.PublishCacheReload()
+	h.RBAC.PublishCacheEvent("RBAC_PERMISSION_DELETED", map[string]any{
+		"perm_id": id,
+	})
+
 	return c.SendStatus(fiber.StatusNoContent)
 }
 
@@ -258,7 +280,11 @@ func (h *RBACAdminHandler) AssignPermission(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
 
-	h.RBAC.PublishCacheReload()
+	h.RBAC.PublishCacheEvent("RBAC_PERMISSION_ASSIGNED", map[string]any{
+		"role_id": roleID,
+		"perm_id": permID,
+	})
+
 	return c.SendStatus(fiber.StatusNoContent)
 }
 
@@ -277,7 +303,11 @@ func (h *RBACAdminHandler) RemovePermission(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
 
-	h.RBAC.PublishCacheReload()
+	h.RBAC.PublishCacheEvent("RBAC_PERMISSION_REMOVED", map[string]any{
+		"role_id": roleID,
+		"perm_id": permID,
+	})
+
 	return c.SendStatus(fiber.StatusNoContent)
 }
 

@@ -19,6 +19,7 @@ import (
 	"ms-authz/internal/infrastructure/cache"
 	"ms-authz/internal/infrastructure/db"
 	"ms-authz/internal/infrastructure/mq"
+	"ms-authz/internal/consumer"
 	"ms-authz/internal/service"
 	"ms-authz/pkg/jwtutil"
 	"os"
@@ -54,15 +55,17 @@ func main() {
 	}
 	defer mqConn.Close()
 
+	publisher := mq.NewPublisherService(mqConn.Channel)
+
 	authService := service.NewAuthService(tokenRepo, keyProvider)
-	rbacService := service.NewRBACService(uow, mqConn.Channel)
+	rbacService := service.NewRBACService(uow, publisher)
 
 	// Start RabbitMQ consumers (fanout listeners)
-	mq.StartConsumers(mqConn.Channel, authService, rbacService)
+	consumer.StartConsumers(mqConn.Channel, authService, rbacService)
 
 	app := fiber.New()
 
-	authorizeHandler := handler.NewAuthorizeHandler(authService, rbacService,mqConn.Channel)
+	authorizeHandler := handler.NewAuthorizeHandler(authService, rbacService,publisher)
 	authorizeHandler.RegisterRoutes(app)
 
 	rbacAdminHandler := handler.NewRBACAdminHandler(uow, rbacService)

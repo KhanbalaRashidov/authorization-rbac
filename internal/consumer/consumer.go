@@ -1,10 +1,10 @@
-package mq
+package consumer
 
 import (
-	"encoding/json"
-	"log"
-	"ms-authz/internal/service"
-	"github.com/rabbitmq/amqp091-go"
+"encoding/json"
+"log"
+"ms-authz/internal/service"
+"github.com/rabbitmq/amqp091-go"
 )
 
 func StartConsumers(ch *amqp091.Channel, authSvc *service.AuthService, rbacSvc *service.RBACService) {
