@@ -15,86 +15,6 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/admin/block-token": {
-            "post": {
-                "description": "Admin tərəfindən manual olaraq JWT ` + "`" + `jti` + "`" + ` və ` + "`" + `exp` + "`" + `-ə əsasən tokenin blackliste əlavə olunması",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Admin"
-                ],
-                "summary": "Admin token bloklama",
-                "parameters": [
-                    {
-                        "description": "JTI və Exp göndər",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/handler.BlockTokenRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Token blocked",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "400": {
-                        "description": "Validation error",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                }
-            }
-        },
-        "/admin/logout-all": {
-            "post": {
-                "description": "Verilən ` + "`" + `user_id` + "`" + `-yə aid olan bütün JWT-lərin JTI-lərini blackliste əlavə edir və bütün instansiyalara yayır.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "text/plain"
-                ],
-                "tags": [
-                    "Admin"
-                ],
-                "summary": "İstifadəçinin bütün tokenlərini bloklayır",
-                "parameters": [
-                    {
-                        "description": "Bloklanacaq istifadəçinin ID-si",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/handler.LogoutAllRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "All user tokens blacklisted",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "400": {
-                        "description": "user_id is required",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                }
-            }
-        },
         "/authorize": {
             "get": {
                 "description": "Token JWT ilə doğrulanır. İstəyə əsasən blacklist və RBAC permission da yoxlanır.",
@@ -202,6 +122,46 @@ const docTemplate = `{
                     },
                     "401": {
                         "description": "Unauthorized",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/logout-all": {
+            "post": {
+                "description": "Verilən ` + "`" + `user_id` + "`" + `-yə aid olan bütün JWT-lərin JTI-lərini blackliste əlavə edir və bütün instansiyalara yayır.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "Admin"
+                ],
+                "summary": "İstifadəçinin bütün tokenlərini bloklayır",
+                "parameters": [
+                    {
+                        "description": "Bloklanacaq istifadəçinin ID-si",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handler.LogoutAllRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "All user tokens blacklisted",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "user_id is required",
                         "schema": {
                             "type": "string"
                         }
@@ -743,18 +703,6 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "handler.BlockTokenRequest": {
-            "type": "object",
-            "properties": {
-                "exp": {
-                    "description": "Unix timestamp",
-                    "type": "integer"
-                },
-                "jti": {
-                    "type": "string"
-                }
-            }
-        },
         "handler.LogoutAllRequest": {
             "type": "object",
             "properties": {

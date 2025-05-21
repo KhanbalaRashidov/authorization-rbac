@@ -1,13 +1,5 @@
 basePath: /
 definitions:
-  handler.BlockTokenRequest:
-    properties:
-      exp:
-        description: Unix timestamp
-        type: integer
-      jti:
-        type: string
-    type: object
   handler.LogoutAllRequest:
     properties:
       user_id:
@@ -24,60 +16,6 @@ info:
   title: AuthZ API
   version: "1.0"
 paths:
-  /admin/block-token:
-    post:
-      consumes:
-      - application/json
-      description: Admin tərəfindən manual olaraq JWT `jti` və `exp`-ə əsasən tokenin
-        blackliste əlavə olunması
-      parameters:
-      - description: JTI və Exp göndər
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/handler.BlockTokenRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Token blocked
-          schema:
-            type: string
-        "400":
-          description: Validation error
-          schema:
-            type: string
-      summary: Admin token bloklama
-      tags:
-      - Admin
-  /admin/logout-all:
-    post:
-      consumes:
-      - application/json
-      description: Verilən `user_id`-yə aid olan bütün JWT-lərin JTI-lərini blackliste
-        əlavə edir və bütün instansiyalara yayır.
-      parameters:
-      - description: Bloklanacaq istifadəçinin ID-si
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/handler.LogoutAllRequest'
-      produces:
-      - text/plain
-      responses:
-        "200":
-          description: All user tokens blacklisted
-          schema:
-            type: string
-        "400":
-          description: user_id is required
-          schema:
-            type: string
-      summary: İstifadəçinin bütün tokenlərini bloklayır
-      tags:
-      - Admin
   /authorize:
     get:
       consumes:
@@ -155,6 +93,33 @@ paths:
       summary: Logout (Tokeni deaktiv edir)
       tags:
       - Authorization
+  /logout-all:
+    post:
+      consumes:
+      - application/json
+      description: Verilən `user_id`-yə aid olan bütün JWT-lərin JTI-lərini blackliste
+        əlavə edir və bütün instansiyalara yayır.
+      parameters:
+      - description: Bloklanacaq istifadəçinin ID-si
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handler.LogoutAllRequest'
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: All user tokens blacklisted
+          schema:
+            type: string
+        "400":
+          description: user_id is required
+          schema:
+            type: string
+      summary: İstifadəçinin bütün tokenlərini bloklayır
+      tags:
+      - Admin
   /permissions:
     get:
       produces:

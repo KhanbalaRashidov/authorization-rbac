@@ -2,31 +2,29 @@ package handler
 
 import (
 	"github.com/gofiber/fiber/v2"
+	"ms-authz/internal/infrastructure/mq"
 	"ms-authz/internal/service"
 	"strings"
-	"ms-authz/internal/infrastructure/mq"
 )
 
 type AuthorizeHandler struct {
-	Auth *service.AuthService
-	RBAC *service.RBACService
+	Auth      *service.AuthService
+	RBAC      *service.RBACService
 	publisher mq.Publisher
 }
 
 func NewAuthorizeHandler(auth *service.AuthService, rbac *service.RBACService, publisher mq.Publisher) *AuthorizeHandler {
 	return &AuthorizeHandler{
-		Auth:        auth,
-		RBAC:        rbac,
+		Auth:      auth,
+		RBAC:      rbac,
 		publisher: publisher,
 	}
 }
 
-
 func (h *AuthorizeHandler) RegisterRoutes(app *fiber.App) {
 	app.Get("/authorize", h.Authorize)
 	app.Post("/logout", h.Logout)
-	app.Post("/admin/logout-all", h.LogoutAll)
-	app.Post("/admin/block-token", h.BlockToken)
+	app.Post("/logout-all", h.LogoutAll)
 }
 
 // Authorize godoc
@@ -65,8 +63,8 @@ func (h *AuthorizeHandler) Authorize(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusUnauthorized, err.Error())
 	}
 
-	if claims.UserID != "" && claims.JTI != "" && claims.ExpiresAt != nil {
-		h.Auth.HandleBlacklistEventWithUser(claims.JTI, claims.ExpiresAt.Unix(), claims.UserID)
+	if claims.UserID != "" && claims.ExpiresAt != nil {
+		h.Auth.HandleBlacklistEventWithUser(token, claims.ExpiresAt.Unix(), claims.UserID, claims.Role)
 	}
 
 	// 4. RBAC yoxlama
@@ -104,8 +102,8 @@ func (h *AuthorizeHandler) Logout(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusUnauthorized, err.Error())
 	}
 
-	h.Auth.HandleBlacklistEvent(claims.JTI, claims.ExpiresAt.Unix())
-	h.publishBlacklistEvent(claims.JTI, claims.ExpiresAt.Unix())
+	h.Auth.HandleBlacklistEvent(token, claims.ExpiresAt.Unix())
+	h.publishBlacklistEvent(token, claims.ExpiresAt.Unix())
 
 	return c.SendStatus(fiber.StatusOK)
 }
@@ -123,7 +121,7 @@ type LogoutAllRequest struct {
 // @Param body body LogoutAllRequest true "Bloklanacaq istifadəçinin ID-si"
 // @Success 200 {string} string "All user tokens blacklisted"
 // @Failure 400 {string} string "user_id is required"
-// @Router /admin/logout-all [post]
+// @Router /logout-all [post]
 func (h *AuthorizeHandler) LogoutAll(c *fiber.Ctx) error {
 	var req LogoutAllRequest
 	if err := c.BodyParser(&req); err != nil || req.UserID == "" {
@@ -131,9 +129,9 @@ func (h *AuthorizeHandler) LogoutAll(c *fiber.Ctx) error {
 	}
 
 	// local cache-ə əlavə et
-	jtis := h.Auth.GetAllJTIsByUser(req.UserID)
-	for _, j := range jtis {
-		h.Auth.HandleBlacklistEvent(j.JTI, j.Exp)
+	tokens := h.Auth.GetAllTokensByUser(req.UserID)
+	for _, t := range tokens {
+		h.Auth.HandleBlacklistEvent(t.Token, t.Exp)
 	}
 
 	// RabbitMQ ilə digər instansiyalara yayımlanır
@@ -148,50 +146,16 @@ func (h *AuthorizeHandler) LogoutAll(c *fiber.Ctx) error {
 	return c.SendString("All user tokens blacklisted")
 }
 
-
-
-type BlockTokenRequest struct {
-	JTI string `json:"jti"`
-	Exp int64  `json:"exp"` // Unix timestamp
-}
-
-// BlockToken godoc
-// @Summary Admin token bloklama
-// @Description Admin tərəfindən manual olaraq JWT `jti` və `exp`-ə əsasən tokenin blackliste əlavə olunması
-// @Tags Admin
-// @Accept json
-// @Produce json
-// @Param body body BlockTokenRequest true "JTI və Exp göndər"
-// @Success 200 {string} string "Token blocked"
-// @Failure 400 {string} string "Validation error"
-// @Router /admin/block-token [post]
-func (h *AuthorizeHandler) BlockToken(c *fiber.Ctx) error {
-	var req BlockTokenRequest
-	if err := c.BodyParser(&req); err != nil {
-		return fiber.NewError(fiber.StatusBadRequest, "Invalid body")
-	}
-	if req.JTI == "" || req.Exp == 0 {
-		return fiber.NewError(fiber.StatusBadRequest, "Missing JTI or Exp")
-	}
-
-	h.Auth.HandleBlacklistEvent(req.JTI, req.Exp)
-	h.publishBlacklistEvent(req.JTI, req.Exp)
-	return c.SendString("Token blocked")
-}
-
-
-func (h *AuthorizeHandler) publishBlacklistEvent(jti string, exp int64) {
+func (h *AuthorizeHandler) publishBlacklistEvent(token string, exp int64) {
 	event := struct {
 		Event string `json:"event"`
-		JTI   string `json:"jti"`
+		Token string `json:"token"`
 		Exp   int64  `json:"exp"`
 	}{
 		Event: "TOKEN_BLACKLISTED",
-		JTI:   jti,
+		Token: token,
 		Exp:   exp,
 	}
 
-	_ = h.publisher.PublishEvent("auth.tokens.fanout", event, []string{
-		
-	})
+	_ = h.publisher.PublishEvent("auth.tokens.fanout", event, []string{})
 }

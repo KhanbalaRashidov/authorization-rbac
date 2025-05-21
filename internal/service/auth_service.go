@@ -3,8 +3,8 @@ package service
 import (
 	"errors"
 	"ms-authz/internal/domain/repository"
-	"ms-authz/pkg/jwtutil"
 	"ms-authz/internal/infrastructure/cache"
+	"ms-authz/pkg/jwtutil"
 )
 
 type AuthService struct {
@@ -36,7 +36,7 @@ func (s *AuthService) ValidateToken(tokenStr string) (*jwtutil.Claims, error) {
 		return nil, err
 	}
 
-	if s.tokenRepo.IsBlacklisted(parsedClaims.JTI) {
+	if s.tokenRepo.IsBlacklisted(tokenStr) {
 		return nil, errors.New("token is blacklisted")
 	}
 
@@ -44,14 +44,14 @@ func (s *AuthService) ValidateToken(tokenStr string) (*jwtutil.Claims, error) {
 }
 
 // MQ və ya logout zamanı tokenin `jti`-sini local cache-ə əlavə edir
-func (s *AuthService) HandleBlacklistEvent(jti string, exp int64) {
-	s.tokenRepo.Add(jti, exp)
+func (s *AuthService) HandleBlacklistEvent(token string, exp int64) {
+	s.tokenRepo.Add(token, exp)
 }
 
-func (s *AuthService) HandleBlacklistEventWithUser(jti string, exp int64, userID string) {
-	s.tokenRepo.AddWithUser(jti, exp, userID)
+func (s *AuthService) HandleBlacklistEventWithUser(token string, exp int64, userID string, role string) {
+	s.tokenRepo.AddWithUser(token, exp, userID, role)
+	s.tokenRepo.Add(token, exp)
 }
-
 
 // ParseAndValidate token for jwt + blacklist checks
 func (s *AuthService) ParseAndValidate(token string, checkJWT, checkBlacklist bool) (*jwtutil.Claims, error) {
@@ -72,14 +72,13 @@ func (s *AuthService) ParseAndValidate(token string, checkJWT, checkBlacklist bo
 		}
 	}
 
-	if checkBlacklist && s.tokenRepo.IsBlacklisted(parsedClaims.JTI) {
+	if checkBlacklist && s.tokenRepo.IsBlacklisted(token) {
 		return nil, errors.New("token is blacklisted")
 	}
 
 	return parsedClaims, nil
 }
 
-
-func (s *AuthService) GetAllJTIsByUser(userID string) []cache.TokenInfo {
-	return s.tokenRepo.GetAllJTIsByUser(userID)
+func (s *AuthService) GetAllTokensByUser(userID string) []cache.TokenInfo {
+	return s.tokenRepo.GetAllTokensByUser(userID)
 }

@@ -17,8 +17,7 @@ import (
 
 type Claims struct {
 	UserID string `json:"user_id"`
-	Role string `json:"role"`
-	JTI  string `json:"jti"`
+	Role   string `json:"role"`
 	jwt.RegisteredClaims
 }
 
@@ -88,7 +87,7 @@ func (f *fileKeyProvider) GetPublicKey(kid string) (*rsa.PublicKey, error) {
 	}
 	f.mu.RUnlock()
 
-	filePath := filepath.Join(f.basePath, kid + ".pem")
+	filePath := filepath.Join(f.basePath, kid+".pem")
 	data, err := os.ReadFile(filePath)
 	if err != nil {
 		return nil, fmt.Errorf("unable to read key file: %w", err)
