@@ -49,6 +49,46 @@
                 }
             }
         },
+        "/admin/logout-all": {
+            "post": {
+                "description": "Verilən `user_id`-yə aid olan bütün JWT-lərin JTI-lərini blackliste əlavə edir və bütün instansiyalara yayır.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "Admin"
+                ],
+                "summary": "İstifadəçinin bütün tokenlərini bloklayır",
+                "parameters": [
+                    {
+                        "description": "Bloklanacaq istifadəçinin ID-si",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handler.LogoutAllRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "All user tokens blacklisted",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "user_id is required",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/authorize": {
             "get": {
                 "description": "Token JWT ilə doğrulanır. İstəyə əsasən blacklist və RBAC permission da yoxlanır.",
@@ -705,6 +745,14 @@
                     "type": "integer"
                 },
                 "jti": {
+                    "type": "string"
+                }
+            }
+        },
+        "handler.LogoutAllRequest": {
+            "type": "object",
+            "properties": {
+                "user_id": {
                     "type": "string"
                 }
             }

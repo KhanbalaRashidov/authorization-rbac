@@ -25,6 +25,7 @@ func NewAuthorizeHandler(auth *service.AuthService, rbac *service.RBACService, p
 func (h *AuthorizeHandler) RegisterRoutes(app *fiber.App) {
 	app.Get("/authorize", h.Authorize)
 	app.Post("/logout", h.Logout)
+	app.Post("/admin/logout-all", h.LogoutAll)
 	app.Post("/admin/block-token", h.BlockToken)
 }
 
@@ -62,6 +63,10 @@ func (h *AuthorizeHandler) Authorize(c *fiber.Ctx) error {
 	claims, err := h.Auth.ParseAndValidate(token, checkJWT, checkBlacklist)
 	if err != nil {
 		return fiber.NewError(fiber.StatusUnauthorized, err.Error())
+	}
+
+	if claims.UserID != "" && claims.JTI != "" && claims.ExpiresAt != nil {
+		h.Auth.HandleBlacklistEventWithUser(claims.JTI, claims.ExpiresAt.Unix(), claims.UserID)
 	}
 
 	// 4. RBAC yoxlama
@@ -104,6 +109,45 @@ func (h *AuthorizeHandler) Logout(c *fiber.Ctx) error {
 
 	return c.SendStatus(fiber.StatusOK)
 }
+
+type LogoutAllRequest struct {
+	UserID string `json:"user_id"`
+}
+
+// LogoutAll godoc
+// @Summary İstifadəçinin bütün tokenlərini bloklayır
+// @Description Verilən `user_id`-yə aid olan bütün JWT-lərin JTI-lərini blackliste əlavə edir və bütün instansiyalara yayır.
+// @Tags Admin
+// @Accept json
+// @Produce plain
+// @Param body body LogoutAllRequest true "Bloklanacaq istifadəçinin ID-si"
+// @Success 200 {string} string "All user tokens blacklisted"
+// @Failure 400 {string} string "user_id is required"
+// @Router /admin/logout-all [post]
+func (h *AuthorizeHandler) LogoutAll(c *fiber.Ctx) error {
+	var req LogoutAllRequest
+	if err := c.BodyParser(&req); err != nil || req.UserID == "" {
+		return fiber.NewError(fiber.StatusBadRequest, "user_id is required")
+	}
+
+	// local cache-ə əlavə et
+	jtis := h.Auth.GetAllJTIsByUser(req.UserID)
+	for _, j := range jtis {
+		h.Auth.HandleBlacklistEvent(j.JTI, j.Exp)
+	}
+
+	// RabbitMQ ilə digər instansiyalara yayımlanır
+	_ = h.publisher.PublishEvent("auth.tokens.fanout", map[string]any{
+		"event":   "TOKEN_BLACKLISTED_ALL",
+		"user_id": req.UserID,
+	}, []string{
+		"blacklist.cache.queue",
+		"blacklist.audit.queue",
+	})
+
+	return c.SendString("All user tokens blacklisted")
+}
+
 
 
 type BlockTokenRequest struct {
@@ -148,7 +192,6 @@ func (h *AuthorizeHandler) publishBlacklistEvent(jti string, exp int64) {
 	}
 
 	_ = h.publisher.PublishEvent("auth.tokens.fanout", event, []string{
-		"blacklist.cache.queue",
-		"blacklist.audit.queue",
+		
 	})
 }

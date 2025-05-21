@@ -76,7 +76,6 @@ func (s *RBACService) PublishCacheEvent(event string, payload map[string]any) {
 	}
 
 	_ = s.publisher.PublishEvent("rbac.update.fanout", message, []string{
-		"rbac.cache.sync.queue",
-		"rbac.audit.log.queue",
+		
 	})
 }

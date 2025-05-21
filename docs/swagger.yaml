@@ -8,6 +8,11 @@ definitions:
       jti:
         type: string
     type: object
+  handler.LogoutAllRequest:
+    properties:
+      user_id:
+        type: string
+    type: object
   model.Permission:
     type: object
   model.Role:
@@ -44,6 +49,33 @@ paths:
           schema:
             type: string
       summary: Admin token bloklama
+      tags:
+      - Admin
+  /admin/logout-all:
+    post:
+      consumes:
+      - application/json
+      description: Verilən `user_id`-yə aid olan bütün JWT-lərin JTI-lərini blackliste
+        əlavə edir və bütün instansiyalara yayır.
+      parameters:
+      - description: Bloklanacaq istifadəçinin ID-si
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handler.LogoutAllRequest'
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: All user tokens blacklisted
+          schema:
+            type: string
+        "400":
+          description: user_id is required
+          schema:
+            type: string
+      summary: İstifadəçinin bütün tokenlərini bloklayır
       tags:
       - Admin
   /authorize:

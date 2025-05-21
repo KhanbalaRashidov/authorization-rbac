@@ -4,6 +4,7 @@ import (
 	"errors"
 	"ms-authz/internal/domain/repository"
 	"ms-authz/pkg/jwtutil"
+	"ms-authz/internal/infrastructure/cache"
 )
 
 type AuthService struct {
@@ -47,6 +48,11 @@ func (s *AuthService) HandleBlacklistEvent(jti string, exp int64) {
 	s.tokenRepo.Add(jti, exp)
 }
 
+func (s *AuthService) HandleBlacklistEventWithUser(jti string, exp int64, userID string) {
+	s.tokenRepo.AddWithUser(jti, exp, userID)
+}
+
+
 // ParseAndValidate token for jwt + blacklist checks
 func (s *AuthService) ParseAndValidate(token string, checkJWT, checkBlacklist bool) (*jwtutil.Claims, error) {
 	_, kid, err := jwtutil.ParseTokenHeader(token)
@@ -71,4 +77,9 @@ func (s *AuthService) ParseAndValidate(token string, checkJWT, checkBlacklist bo
 	}
 
 	return parsedClaims, nil
+}
+
+
+func (s *AuthService) GetAllJTIsByUser(userID string) []cache.TokenInfo {
+	return s.tokenRepo.GetAllJTIsByUser(userID)
 }

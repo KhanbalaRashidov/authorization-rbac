@@ -13,13 +13,14 @@ import (
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"log"
+	"time"
 	_ "ms-authz/docs"
 	"ms-authz/internal/domain/model"
 	"ms-authz/internal/handler"
 	"ms-authz/internal/infrastructure/cache"
 	"ms-authz/internal/infrastructure/db"
 	"ms-authz/internal/infrastructure/mq"
-	"ms-authz/internal/consumer"
+	//"ms-authz/internal/consumer"
 	"ms-authz/internal/service"
 	"ms-authz/pkg/jwtutil"
 	"os"
@@ -47,6 +48,7 @@ func main() {
 
 	uow := db.NewUnitOfWork(dbConn)
 	tokenRepo := cache.NewTokenRepository()
+	cache.StartTokenCleanupService(tokenRepo, time.Minute*5)
 	keyProvider := jwtutil.NewFileKeyProvider(os.Getenv("PUBLIC_KEY_DIR"))
 
 	mqConn, err := mq.NewMQ(rabbitURL)
@@ -61,7 +63,7 @@ func main() {
 	rbacService := service.NewRBACService(uow, publisher)
 
 	// Start RabbitMQ consumers (fanout listeners)
-	consumer.StartConsumers(mqConn.Channel, authService, rbacService)
+	//consumer.StartConsumers(mqConn.Channel, authService, rbacService)
 
 	app := fiber.New()
 
