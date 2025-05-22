@@ -115,3 +115,13 @@ func (f *fileKeyProvider) GetPublicKey(kid string) (*rsa.PublicKey, error) {
 
 	return rsaKey, nil
 }
+
+func (f *fileKeyProvider) PreloadKeys() {
+	files, _ := os.ReadDir(f.basePath)
+	for _, file := range files {
+		if strings.HasSuffix(file.Name(), ".pem") {
+			kid := strings.TrimSuffix(file.Name(), ".pem")
+			_, _ = f.GetPublicKey(kid) // cache-ə yüklə
+		}
+	}
+}

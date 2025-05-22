@@ -13,6 +13,19 @@ type AuthorizeHandler struct {
 	publisher mq.Publisher
 }
 
+type AuthzCheckResponse struct {
+	Status           bool   `json:"status"`
+	UserID           string `json:"user_id,omitempty"`
+	Role             string `json:"role,omitempty"`
+	PrivilegeChecked string `json:"privilege_checked,omitempty"`
+	RBACChecked      bool   `json:"rbac_checked"`
+	RBACResult       bool   `json:"rbac_result"`
+	JWTValidated     bool   `json:"jwt_validated"`
+	BlacklistChecked bool   `json:"blacklist_checked"`
+	Blacklisted      bool   `json:"blacklisted"`
+	Error            string `json:"error,omitempty"` // Əgər status=false olsa, səbəb burda olur
+}
+
 func NewAuthorizeHandler(auth *service.AuthService, rbac *service.RBACService, publisher mq.Publisher) *AuthorizeHandler {
 	return &AuthorizeHandler{
 		Auth:      auth,
@@ -58,9 +71,16 @@ func (h *AuthorizeHandler) Authorize(c *fiber.Ctx) error {
 	privilege := c.Query("privilege", "")
 
 	// 3. Token parse və yoxlama
-	claims, err := h.Auth.ParseAndValidate(token, checkJWT, checkBlacklist)
+	claims, err := h.Auth.Validate(token, checkJWT, checkBlacklist)
 	if err != nil {
-		return fiber.NewError(fiber.StatusUnauthorized, err.Error())
+		return c.Status(fiber.StatusUnauthorized).JSON(AuthzCheckResponse{
+			Status:           false,
+			Error:            err.Error(),
+			JWTValidated:     checkJWT,
+			BlacklistChecked: checkBlacklist,
+			RBACChecked:      checkRBAC,
+			PrivilegeChecked: privilege,
+		})
 	}
 
 	if claims.UserID != "" && claims.ExpiresAt != nil {
@@ -68,16 +88,46 @@ func (h *AuthorizeHandler) Authorize(c *fiber.Ctx) error {
 	}
 
 	// 4. RBAC yoxlama
+	rbacOK := true
 	if checkRBAC {
 		if privilege == "" {
-			return fiber.NewError(fiber.StatusBadRequest, "Privilege is required for RBAC check")
+			return c.Status(fiber.StatusBadRequest).JSON(AuthzCheckResponse{
+				Status:           false,
+				UserID:           claims.UserID,
+				Role:             claims.Role,
+				Error:            "Privilege is required for RBAC check",
+				JWTValidated:     checkJWT,
+				BlacklistChecked: checkBlacklist,
+				RBACChecked:      checkRBAC,
+				PrivilegeChecked: privilege,
+			})
 		}
 		if !h.RBAC.HasPermission(claims.Role, privilege) {
-			return fiber.NewError(fiber.StatusForbidden, "Permission denied")
+			rbacOK = false
+			return c.Status(fiber.StatusOK).JSON(AuthzCheckResponse{
+				Status:           false,
+				UserID:           claims.UserID,
+				Role:             claims.Role,
+				Error:            "Permission denied",
+				JWTValidated:     checkJWT,
+				BlacklistChecked: checkBlacklist,
+				RBACChecked:      checkRBAC,
+				PrivilegeChecked: privilege,
+				RBACResult:       false,
+			})
 		}
 	}
 
-	return c.SendStatus(fiber.StatusOK)
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"status":            true,
+		"user_id":           claims.UserID,
+		"role":              claims.Role,
+		"privilege_checked": privilege,
+		"rbac_checked":      checkRBAC,
+		"rbac_result":       rbacOK,
+		"jwt_validated":     checkJWT,
+		"blacklist_checked": checkBlacklist,
+	})
 }
 
 // Logout godoc
@@ -97,7 +147,7 @@ func (h *AuthorizeHandler) Logout(c *fiber.Ctx) error {
 	}
 	token := strings.TrimPrefix(authHeader, "Bearer ")
 
-	claims, err := h.Auth.ParseAndValidate(token, true, false) // Blacklist yoxlamasına ehtiyac yoxdur
+	claims, err := h.Auth.Validate(token, true, false) // Blacklist yoxlamasına ehtiyac yoxdur
 	if err != nil {
 		return fiber.NewError(fiber.StatusUnauthorized, err.Error())
 	}
