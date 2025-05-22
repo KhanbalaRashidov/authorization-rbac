@@ -115,7 +115,7 @@ type LogoutAllRequest struct {
 // LogoutAll godoc
 // @Summary İstifadəçinin bütün tokenlərini bloklayır
 // @Description Verilən `user_id`-yə aid olan bütün JWT-lərin JTI-lərini blackliste əlavə edir və bütün instansiyalara yayır.
-// @Tags Admin
+// @Tags Authorization
 // @Accept json
 // @Produce plain
 // @Param body body LogoutAllRequest true "Bloklanacaq istifadəçinin ID-si"
