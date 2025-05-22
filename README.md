@@ -105,38 +105,38 @@ Access Swagger UI at: [http://localhost:8000/swagger/index.html](http://localhos
 
     ### 🔒 Authorization
 
-    | Method | Endpoint     | Description                  |
-    | ------ | ------------ | ---------------------------- |
-    | GET    | `/authorize` | JWT + Blacklist + RBAC check |
+    | Method | Endpoint              | Description                  |
+    | ------ |-----------------------| ---------------------------- |
+    | GET    | `/api/v1/authz/check` | JWT + Blacklist + RBAC check |
 
     ### 🧑‍💼 Roles
 
-    | Method | Endpoint                           | Description            |
-    | ------ | ---------------------------------- | ---------------------- |
-    | GET    | `/roles`                           | Get all roles          |
-    | POST   | `/roles`                           | Create new role        |
-    | PUT    | `/roles/{id}`                      | Update existing role   |
-    | DELETE | `/roles/{id}`                      | Delete role by ID      |
-    | GET    | `/roles/{id}/permissions`          | Get role's permissions |
-    | POST   | `/roles/{id}/permissions/{permID}` | Assign permission      |
-    | DELETE | `/roles/{id}/permissions/{permID}` | Remove permission      |
+    | Method | Endpoint                                        | Description            |
+    | ------ |-------------------------------------------------| ---------------------- |
+    | GET    | `/api/v1/authz/roles`                           | Get all roles          |
+    | POST   | `/api/v1/authz/roles`                           | Create new role        |
+    | PUT    | `/api/v1/authz/roles/{id}`                      | Update existing role   |
+    | DELETE | `/api/v1/authz/roles/{id}`                      | Delete role by ID      |
+    | GET    | `/api/v1/authz/roles/{id}/permissions`          | Get role's permissions |
+    | POST   | `/api/v1/authz/roles/{id}/permissions/{permID}` | Assign permission      |
+    | DELETE | `/api/v1/authz/roles/{id}/permissions/{permID}` | Remove permission      |
 
     ### 🛡️ Permissions
 
-    | Method | Endpoint                  | Description                      |
-    | ------ | ------------------------- | -------------------------------- |
-    | GET    | `/permissions`            | Get all permissions              |
-    | POST   | `/permissions`            | Create new permission            |
-    | PUT    | `/permissions/{id}`       | Update permission                |
-    | DELETE | `/permissions/{id}`       | Delete permission by ID          |
-    | GET    | `/permissions/{id}/roles` | Get roles assigned to permission |
+    | Method | Endpoint                               | Description                      |
+    | ------ |----------------------------------------| -------------------------------- |
+    | GET    | `/api/v1/authz/permissions`            | Get all permissions              |
+    | POST   | `/api/v1/authz/permissions`            | Create new permission            |
+    | PUT    | `/api/v1/authz/permissions/{id}`       | Update permission                |
+    | DELETE | `/api/v1/authz/permissions/{id}`       | Delete permission by ID          |
+    | GET    | `/api/v1/authz/permissions/{id}/roles` | Get roles assigned to permission |
 
     ### 🔁 Expanded Queries
 
-    | Method | Endpoint                  | Description                    |
-    | ------ | ------------------------- | ------------------------------ |
-    | GET    | `/roles-with-permissions` | All roles with permission list |
-    | GET    | `/permissions-with-roles` | All permissions with roles     |
+    | Method | Endpoint                                           | Description                    |
+    | ------ |----------------------------------------------------| ------------------------------ |
+    | GET    | `/api/v1/authz/permissions/roles-with-permissions` | All roles with permission list |
+    | GET    | `/api/v1/authz/roles/permissions-with-roles`       | All permissions with roles     |
 
     ---
 
