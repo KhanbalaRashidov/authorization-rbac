@@ -4,13 +4,13 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"ms-authz/internal/domain/model"
 	"ms-authz/internal/domain/repository"
-	"ms-authz/internal/service"
 	"ms-authz/internal/dto"
+	"ms-authz/internal/service"
 	"strconv"
 )
 
 type RBACAdminHandler struct {
-	UoW repository.UnitOfWork
+	UoW  repository.UnitOfWork
 	RBAC *service.RBACService
 }
 
@@ -19,21 +19,21 @@ func NewRBACAdminHandler(uow repository.UnitOfWork, rbacService *service.RBACSer
 }
 
 func (h *RBACAdminHandler) RegisterRoutes(app *fiber.App) {
-	app.Post("/roles", h.CreateRole)
-	app.Get("/roles", h.GetRoles)
-	app.Delete("/roles/:id", h.DeleteRole)
-	app.Post("/roles/:roleID/permissions/:permID", h.AssignPermission)
-	app.Delete("/roles/:roleID/permissions/:permID", h.RemovePermission)
-	app.Get("/roles-with-permissions", h.GetRolesWithPermissions)
-	app.Get("/roles/:id/permissions", h.GetPermissionsByRoleID)
-	app.Put("/roles/:id", h.UpdateRole)
+	app.Post("/api/v1/authz/roles", h.CreateRole)
+	app.Get("/api/v1/authz/roles", h.GetRoles)
+	app.Delete("/api/v1/authz/roles/:id", h.DeleteRole)
+	app.Post("/api/v1/authz/roles/:roleID/permissions/:permID", h.AssignPermission)
+	app.Delete("/api/v1/authz//roles/:roleID/permissions/:permID", h.RemovePermission)
+	app.Get("/api/v1/authz/roles/roles-with-permissions", h.GetRolesWithPermissions)
+	app.Get("/api/v1/authz/roles/:id/permissions", h.GetPermissionsByRoleID)
+	app.Put("/api/v1/authz/roles/:id", h.UpdateRole)
 
-	app.Post("/permissions", h.CreatePermission)
-	app.Get("/permissions", h.GetPermissions)
-	app.Delete("/permissions/:id", h.DeletePermission)
-	app.Get("/permissions-with-roles", h.GetPermissionsWithRoles)
-	app.Get("/permissions/:id/roles", h.GetRolesByPermissionID)
-	app.Put("/permissions/:id", h.UpdatePermission)
+	app.Post("/api/v1/authz/permissions", h.CreatePermission)
+	app.Get("/api/v1/authz/permissions", h.GetPermissions)
+	app.Delete("/api/v1/authz/permissions/:id", h.DeletePermission)
+	app.Get("/api/v1/authz/permissions/permissions-with-roles", h.GetPermissionsWithRoles)
+	app.Get("/api/v1/authz/permissions/:id/roles", h.GetRolesByPermissionID)
+	app.Put("/api/v1/authz/permissions/:id", h.UpdatePermission)
 
 }
 
@@ -46,7 +46,7 @@ func (h *RBACAdminHandler) RegisterRoutes(app *fiber.App) {
 // @Success 200 {object} model.Role
 // @Failure 400 {string} string "Invalid body"
 // @Failure 500 {string} string "Server error"
-// @Router /roles [post]
+// @Router /api/v1/authz/roles [post]
 func (h *RBACAdminHandler) CreateRole(c *fiber.Ctx) error {
 	var role model.Role
 	if err := c.BodyParser(&role); err != nil {
@@ -57,7 +57,7 @@ func (h *RBACAdminHandler) CreateRole(c *fiber.Ctx) error {
 	}
 
 	h.RBAC.PublishCacheEvent("RBAC_ROLE_CREATED", map[string]any{
-		"role_id": role.ID,
+		"role_id":   role.ID,
 		"role_name": role.Name,
 	})
 
@@ -70,7 +70,7 @@ func (h *RBACAdminHandler) CreateRole(c *fiber.Ctx) error {
 // @Produce json
 // @Success 200 {array} model.Role
 // @Failure 500 {string} string "Server error"
-// @Router /roles [get]
+// @Router /api/v1/authz/roles [get]
 func (h *RBACAdminHandler) GetRoles(c *fiber.Ctx) error {
 	roles, err := h.UoW.RoleRepo().GetAll()
 	if err != nil {
@@ -88,7 +88,6 @@ func (h *RBACAdminHandler) GetRoles(c *fiber.Ctx) error {
 	return c.JSON(result)
 }
 
-
 // UpdateRole godoc
 // @Summary Mövcud rolu yeniləyir
 // @Tags Role
@@ -100,7 +99,7 @@ func (h *RBACAdminHandler) GetRoles(c *fiber.Ctx) error {
 // @Failure 400 {string} string "Invalid input"
 // @Failure 404 {string} string "Role not found"
 // @Failure 500 {string} string "Server error"
-// @Router /roles/{id} [put]
+// @Router /api/v1/authz/roles/{id} [put]
 func (h *RBACAdminHandler) UpdateRole(c *fiber.Ctx) error {
 	id, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
@@ -124,7 +123,7 @@ func (h *RBACAdminHandler) UpdateRole(c *fiber.Ctx) error {
 	}
 
 	h.RBAC.PublishCacheEvent("RBAC_ROLE_UPDATED", map[string]any{
-		"role_id": role.ID,
+		"role_id":  role.ID,
 		"new_name": updated.Name,
 	})
 
@@ -137,7 +136,7 @@ func (h *RBACAdminHandler) UpdateRole(c *fiber.Ctx) error {
 // @Param id path int true "Role ID"
 // @Success 204 {string} string "No Content"
 // @Failure 500 {string} string "Server error"
-// @Router /roles/{id} [delete]
+// @Router /api/v1/authz/roles/{id} [delete]
 func (h *RBACAdminHandler) DeleteRole(c *fiber.Ctx) error {
 	id, _ := strconv.Atoi(c.Params("id"))
 	if err := h.UoW.RoleRepo().Delete(uint(id)); err != nil {
@@ -160,7 +159,7 @@ func (h *RBACAdminHandler) DeleteRole(c *fiber.Ctx) error {
 // @Success 200 {object} model.Permission
 // @Failure 400 {string} string "Invalid body"
 // @Failure 500 {string} string "Server error"
-// @Router /permissions [post]
+// @Router /api/v1/authz/permissions [post]
 func (h *RBACAdminHandler) CreatePermission(c *fiber.Ctx) error {
 	var p model.Permission
 	if err := c.BodyParser(&p); err != nil {
@@ -171,7 +170,7 @@ func (h *RBACAdminHandler) CreatePermission(c *fiber.Ctx) error {
 	}
 
 	h.RBAC.PublishCacheEvent("RBAC_PERMISSION_CREATED", map[string]any{
-		"perm_id": p.ID,
+		"perm_id":   p.ID,
 		"perm_name": p.Name,
 	})
 
@@ -184,7 +183,7 @@ func (h *RBACAdminHandler) CreatePermission(c *fiber.Ctx) error {
 // @Produce json
 // @Success 200 {array} model.Permission
 // @Failure 500 {string} string "Server error"
-// @Router /permissions [get]
+// @Router /api/v1/authz/permissions [get]
 func (h *RBACAdminHandler) GetPermissions(c *fiber.Ctx) error {
 	perms, err := h.UoW.PermissionRepo().GetAll()
 	if err != nil {
@@ -202,7 +201,6 @@ func (h *RBACAdminHandler) GetPermissions(c *fiber.Ctx) error {
 	return c.JSON(result)
 }
 
-
 // UpdatePermission godoc
 // @Summary Mövcud permission-u yeniləyir
 // @Tags Permission
@@ -214,7 +212,7 @@ func (h *RBACAdminHandler) GetPermissions(c *fiber.Ctx) error {
 // @Failure 400 {string} string "Invalid input"
 // @Failure 404 {string} string "Permission not found"
 // @Failure 500 {string} string "Server error"
-// @Router /permissions/{id} [put]
+// @Router /api/v1/authz/permissions/{id} [put]
 func (h *RBACAdminHandler) UpdatePermission(c *fiber.Ctx) error {
 	id, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
@@ -238,7 +236,7 @@ func (h *RBACAdminHandler) UpdatePermission(c *fiber.Ctx) error {
 	}
 
 	h.RBAC.PublishCacheEvent("RBAC_PERMISSION_UPDATED", map[string]any{
-		"perm_id": perm.ID,
+		"perm_id":  perm.ID,
 		"new_name": updated.Name,
 	})
 
@@ -251,7 +249,7 @@ func (h *RBACAdminHandler) UpdatePermission(c *fiber.Ctx) error {
 // @Param id path int true "Permission ID"
 // @Success 204 {string} string "No Content"
 // @Failure 500 {string} string "Server error"
-// @Router /permissions/{id} [delete]
+// @Router /api/v1/authz/permissions/{id} [delete]
 func (h *RBACAdminHandler) DeletePermission(c *fiber.Ctx) error {
 	id, _ := strconv.Atoi(c.Params("id"))
 	if err := h.UoW.PermissionRepo().Delete(uint(id)); err != nil {
@@ -272,7 +270,7 @@ func (h *RBACAdminHandler) DeletePermission(c *fiber.Ctx) error {
 // @Param permID path int true "Permission ID"
 // @Success 204 {string} string "No Content"
 // @Failure 500 {string} string "Server error"
-// @Router /roles/{roleID}/permissions/{permID} [post]
+// @Router /api/v1/authz/roles/{roleID}/permissions/{permID} [post]
 func (h *RBACAdminHandler) AssignPermission(c *fiber.Ctx) error {
 	roleID, _ := strconv.Atoi(c.Params("roleID"))
 	permID, _ := strconv.Atoi(c.Params("permID"))
@@ -285,6 +283,7 @@ func (h *RBACAdminHandler) AssignPermission(c *fiber.Ctx) error {
 		"perm_id": permID,
 	})
 
+	h.RBAC.ReloadCache()
 	return c.SendStatus(fiber.StatusNoContent)
 }
 
@@ -295,7 +294,7 @@ func (h *RBACAdminHandler) AssignPermission(c *fiber.Ctx) error {
 // @Param permID path int true "Permission ID"
 // @Success 204 {string} string "No Content"
 // @Failure 500 {string} string "Server error"
-// @Router /roles/{roleID}/permissions/{permID} [delete]
+// @Router /api/v1/authz/roles/{roleID}/permissions/{permID} [delete]
 func (h *RBACAdminHandler) RemovePermission(c *fiber.Ctx) error {
 	roleID, _ := strconv.Atoi(c.Params("roleID"))
 	permID, _ := strconv.Atoi(c.Params("permID"))
@@ -317,7 +316,7 @@ func (h *RBACAdminHandler) RemovePermission(c *fiber.Ctx) error {
 // @Produce json
 // @Success 200 {array} model.Role
 // @Failure 500 {string} string "Server error"
-// @Router /roles-with-permissions [get]
+// @Router /api/v1/authz/roles/roles-with-permissions [get]
 func (h *RBACAdminHandler) GetRolesWithPermissions(c *fiber.Ctx) error {
 	roles, err := h.UoW.RoleRepo().GetAllWithPermissions()
 	if err != nil {
@@ -342,14 +341,13 @@ func (h *RBACAdminHandler) GetRolesWithPermissions(c *fiber.Ctx) error {
 	return c.JSON(result)
 }
 
-
 // GetPermissionsWithRoles godoc
 // @Summary Permission-ları və aid olduqları rolları qaytarır
 // @Tags Permission
 // @Produce json
 // @Success 200 {array} model.Permission
 // @Failure 500 {string} string "Server error"
-// @Router /permissions-with-roles [get]
+// @Router /api/v1/authz/permissions/permissions-with-roles [get]
 func (h *RBACAdminHandler) GetPermissionsWithRoles(c *fiber.Ctx) error {
 	perms, err := h.UoW.PermissionRepo().GetAllWithRoles()
 	if err != nil {
@@ -382,7 +380,7 @@ func (h *RBACAdminHandler) GetPermissionsWithRoles(c *fiber.Ctx) error {
 // @Success 200 {array} model.Permission
 // @Failure 400 {string} string "Invalid ID"
 // @Failure 500 {string} string "Server error"
-// @Router /roles/{id}/permissions [get]
+// @Router /api/v1/authz/roles/{id}/permissions [get]
 func (h *RBACAdminHandler) GetPermissionsByRoleID(c *fiber.Ctx) error {
 	id, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
@@ -413,7 +411,7 @@ func (h *RBACAdminHandler) GetPermissionsByRoleID(c *fiber.Ctx) error {
 // @Success 200 {array} model.Role
 // @Failure 400 {string} string "Invalid ID"
 // @Failure 500 {string} string "Server error"
-// @Router /permissions/{id}/roles [get]
+// @Router /api/v1/authz/permissions/{id}/roles [get]
 func (h *RBACAdminHandler) GetRolesByPermissionID(c *fiber.Ctx) error {
 	id, err := strconv.Atoi(c.Params("id"))
 	if err != nil {

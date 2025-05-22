@@ -16,7 +16,7 @@ info:
   title: AuthZ API
   version: "1.0"
 paths:
-  /authorize:
+  /api/v1/authz/check:
     get:
       consumes:
       - application/json
@@ -28,17 +28,18 @@ paths:
         name: Authorization
         required: true
         type: string
-      - description: 'JWT imzası yoxlansın? (default: true)'
+      - default: true
+        description: JWT yoxlanılsın?
         in: query
         name: check_jwt
-        required: true
         type: boolean
-      - description: 'Token blacklistedir? (default: true)'
+      - default: true
+        description: Blacklist yoxlanılsın?
         in: query
         name: check_blacklist
-        required: true
         type: boolean
-      - description: 'RBAC permission yoxlansın? (default: false)'
+      - default: false
+        description: RBAC yoxlanılsın?
         in: query
         name: check_rbac
         type: boolean
@@ -68,7 +69,7 @@ paths:
       summary: JWT və RBAC yoxlama
       tags:
       - Authorization
-  /logout:
+  /api/v1/authz/logout:
     post:
       consumes:
       - application/json
@@ -93,7 +94,7 @@ paths:
       summary: Logout (Tokeni deaktiv edir)
       tags:
       - Authorization
-  /logout-all:
+  /api/v1/authz/logout-all:
     post:
       consumes:
       - application/json
@@ -120,7 +121,7 @@ paths:
       summary: İstifadəçinin bütün tokenlərini bloklayır
       tags:
       - Authorization
-  /permissions:
+  /api/v1/authz/permissions:
     get:
       produces:
       - application/json
@@ -166,25 +167,7 @@ paths:
       summary: Yeni permission yaradır
       tags:
       - Permission
-  /permissions-with-roles:
-    get:
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/model.Permission'
-            type: array
-        "500":
-          description: Server error
-          schema:
-            type: string
-      summary: Permission-ları və aid olduqları rolları qaytarır
-      tags:
-      - Permission
-  /permissions/{id}:
+  /api/v1/authz/permissions/{id}:
     delete:
       parameters:
       - description: Permission ID
@@ -241,7 +224,7 @@ paths:
       summary: Mövcud permission-u yeniləyir
       tags:
       - Permission
-  /permissions/{id}/roles:
+  /api/v1/authz/permissions/{id}/roles:
     get:
       parameters:
       - description: Permission ID
@@ -269,7 +252,25 @@ paths:
       summary: Verilmiş permission ID üçün aid olduğu rolları qaytarır
       tags:
       - Permission
-  /roles:
+  /api/v1/authz/permissions/permissions-with-roles:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.Permission'
+            type: array
+        "500":
+          description: Server error
+          schema:
+            type: string
+      summary: Permission-ları və aid olduqları rolları qaytarır
+      tags:
+      - Permission
+  /api/v1/authz/roles:
     get:
       produces:
       - application/json
@@ -315,25 +316,7 @@ paths:
       summary: Yeni rol yaradır
       tags:
       - Role
-  /roles-with-permissions:
-    get:
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/model.Role'
-            type: array
-        "500":
-          description: Server error
-          schema:
-            type: string
-      summary: Rolları və onlara bağlı permission-ları qaytarır
-      tags:
-      - Role
-  /roles/{id}:
+  /api/v1/authz/roles/{id}:
     delete:
       parameters:
       - description: Role ID
@@ -390,7 +373,7 @@ paths:
       summary: Mövcud rolu yeniləyir
       tags:
       - Role
-  /roles/{id}/permissions:
+  /api/v1/authz/roles/{id}/permissions:
     get:
       parameters:
       - description: Role ID
@@ -418,7 +401,7 @@ paths:
       summary: Verilmiş role ID üçün permission-ları qaytarır
       tags:
       - Role
-  /roles/{roleID}/permissions/{permID}:
+  /api/v1/authz/roles/{roleID}/permissions/{permID}:
     delete:
       parameters:
       - description: Role ID
@@ -467,4 +450,22 @@ paths:
       summary: Role-a permission təyin edir
       tags:
       - Role-Permission
+  /api/v1/authz/roles/roles-with-permissions:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.Role'
+            type: array
+        "500":
+          description: Server error
+          schema:
+            type: string
+      summary: Rolları və onlara bağlı permission-ları qaytarır
+      tags:
+      - Role
 swagger: "2.0"

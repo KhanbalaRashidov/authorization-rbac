@@ -53,6 +53,10 @@ func (s *AuthService) HandleBlacklistEventWithUser(token string, exp int64, user
 	s.tokenRepo.Add(token, exp)
 }
 
+func (s *AuthService) AddTokenForTracking(token string, exp int64, userID string, role string) {
+	s.tokenRepo.AddWithUser(token, exp, userID, role)
+}
+
 // ParseAndValidate token for jwt + blacklist checks
 func (s *AuthService) ParseAndValidate(token string, checkJWT, checkBlacklist bool) (*jwtutil.Claims, error) {
 	_, kid, err := jwtutil.ParseTokenHeader(token)

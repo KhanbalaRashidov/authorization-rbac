@@ -15,7 +15,7 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/authorize": {
+        "/api/v1/authz/check": {
             "get": {
                 "description": "Token JWT ilə doğrulanır. İstəyə əsasən blacklist və RBAC permission da yoxlanır.",
                 "consumes": [
@@ -38,21 +38,22 @@ const docTemplate = `{
                     },
                     {
                         "type": "boolean",
-                        "description": "JWT imzası yoxlansın? (default: true)",
+                        "default": true,
+                        "description": "JWT yoxlanılsın?",
                         "name": "check_jwt",
-                        "in": "query",
-                        "required": true
+                        "in": "query"
                     },
                     {
                         "type": "boolean",
-                        "description": "Token blacklistedir? (default: true)",
+                        "default": true,
+                        "description": "Blacklist yoxlanılsın?",
                         "name": "check_blacklist",
-                        "in": "query",
-                        "required": true
+                        "in": "query"
                     },
                     {
                         "type": "boolean",
-                        "description": "RBAC permission yoxlansın? (default: false)",
+                        "default": false,
+                        "description": "RBAC yoxlanılsın?",
                         "name": "check_rbac",
                         "in": "query"
                     },
@@ -91,7 +92,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/logout": {
+        "/api/v1/authz/logout": {
             "post": {
                 "description": "İstifadəçi tokenini blackliste əlavə edir (logout əməliyyatı).",
                 "consumes": [
@@ -129,7 +130,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/logout-all": {
+        "/api/v1/authz/logout-all": {
             "post": {
                 "description": "Verilən ` + "`" + `user_id` + "`" + `-yə aid olan bütün JWT-lərin JTI-lərini blackliste əlavə edir və bütün instansiyalara yayır.",
                 "consumes": [
@@ -169,7 +170,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/permissions": {
+        "/api/v1/authz/permissions": {
             "get": {
                 "produces": [
                     "application/json"
@@ -240,7 +241,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/permissions-with-roles": {
+        "/api/v1/authz/permissions/permissions-with-roles": {
             "get": {
                 "produces": [
                     "application/json"
@@ -268,7 +269,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/permissions/{id}": {
+        "/api/v1/authz/permissions/{id}": {
             "put": {
                 "consumes": [
                     "application/json"
@@ -355,7 +356,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/permissions/{id}/roles": {
+        "/api/v1/authz/permissions/{id}/roles": {
             "get": {
                 "produces": [
                     "application/json"
@@ -398,7 +399,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/roles": {
+        "/api/v1/authz/roles": {
             "get": {
                 "produces": [
                     "application/json"
@@ -469,7 +470,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/roles-with-permissions": {
+        "/api/v1/authz/roles/roles-with-permissions": {
             "get": {
                 "produces": [
                     "application/json"
@@ -497,7 +498,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/roles/{id}": {
+        "/api/v1/authz/roles/{id}": {
             "put": {
                 "consumes": [
                     "application/json"
@@ -584,7 +585,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/roles/{id}/permissions": {
+        "/api/v1/authz/roles/{id}/permissions": {
             "get": {
                 "produces": [
                     "application/json"
@@ -627,7 +628,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/roles/{roleID}/permissions/{permID}": {
+        "/api/v1/authz/roles/{roleID}/permissions/{permID}": {
             "post": {
                 "tags": [
                     "Role-Permission"

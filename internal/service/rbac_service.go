@@ -4,19 +4,20 @@ import (
 	"log"
 	"ms-authz/internal/domain/model"
 	"ms-authz/internal/domain/repository"
-	"sync"
 	"ms-authz/internal/infrastructure/mq"
+	"strings"
+	"sync"
 )
 
 type RBACService struct {
-	uow             repository.UnitOfWork
-	cache           sync.Map // map[roleName][]permissionCode
+	uow       repository.UnitOfWork
+	cache     sync.Map // map[roleName][]permissionCode
 	publisher mq.Publisher
 }
 
 func NewRBACService(uow repository.UnitOfWork, publisher mq.Publisher) *RBACService {
 	s := &RBACService{
-		uow:             uow,
+		uow:       uow,
 		publisher: publisher,
 	}
 	s.LoadCache()
@@ -39,7 +40,7 @@ func (s *RBACService) HasPermission(roleName string, permission string) bool {
 	}
 	perms := val.([]string)
 	for _, p := range perms {
-		if p == permission {
+		if strings.EqualFold(p, permission) {
 			return true
 		}
 	}
@@ -75,7 +76,5 @@ func (s *RBACService) PublishCacheEvent(event string, payload map[string]any) {
 		message[k] = v
 	}
 
-	_ = s.publisher.PublishEvent("rbac.update.fanout", message, []string{
-		
-	})
+	_ = s.publisher.PublishEvent("rbac.update.fanout", message, []string{})
 }

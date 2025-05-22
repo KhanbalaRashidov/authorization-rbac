@@ -22,9 +22,9 @@ func NewAuthorizeHandler(auth *service.AuthService, rbac *service.RBACService, p
 }
 
 func (h *AuthorizeHandler) RegisterRoutes(app *fiber.App) {
-	app.Get("/authorize", h.Authorize)
-	app.Post("/logout", h.Logout)
-	app.Post("/logout-all", h.LogoutAll)
+	app.Get("/api/v1/authz/check", h.Authorize)
+	app.Post("/api/v1/authz/logout", h.Logout)
+	app.Post("/api/v1/authz/logout-all", h.LogoutAll)
 }
 
 // Authorize godoc
@@ -34,15 +34,15 @@ func (h *AuthorizeHandler) RegisterRoutes(app *fiber.App) {
 // @Accept json
 // @Produce json
 // @Param Authorization header string true "Bearer {token}"
-// @Param check_jwt query bool true "JWT imzası yoxlansın? (default: true)"
-// @Param check_blacklist query bool true "Token blacklistedir? (default: true)"
-// @Param check_rbac query bool false "RBAC permission yoxlansın? (default: false)"
+// @Param check_jwt query bool false "JWT yoxlanılsın?" default(true)
+// @Param check_blacklist query bool false "Blacklist yoxlanılsın?" default(true)
+// @Param check_rbac query bool false "RBAC yoxlanılsın?" default(false)
 // @Param privilege query string false "RBAC üçün icazə adı (məs: DELETE_USER)"
 // @Success 200 {string} string "OK"
 // @Failure 400 {string} string "Privilege is required for RBAC check"
 // @Failure 401 {string} string "Unauthorized"
 // @Failure 403 {string} string "Permission denied"
-// @Router /authorize [get]
+// @Router /api/v1/authz/check [get]
 func (h *AuthorizeHandler) Authorize(c *fiber.Ctx) error {
 	// 1. Token oxu
 	authHeader := c.Get("Authorization")
@@ -64,7 +64,7 @@ func (h *AuthorizeHandler) Authorize(c *fiber.Ctx) error {
 	}
 
 	if claims.UserID != "" && claims.ExpiresAt != nil {
-		h.Auth.HandleBlacklistEventWithUser(token, claims.ExpiresAt.Unix(), claims.UserID, claims.Role)
+		h.Auth.AddTokenForTracking(token, claims.ExpiresAt.Unix(), claims.UserID, claims.Role)
 	}
 
 	// 4. RBAC yoxlama
@@ -89,7 +89,7 @@ func (h *AuthorizeHandler) Authorize(c *fiber.Ctx) error {
 // @Param Authorization header string true "Bearer {token}"
 // @Success 200 {string} string "Logged out"
 // @Failure 401 {string} string "Unauthorized"
-// @Router /logout [post]
+// @Router /api/v1/authz/logout [post]
 func (h *AuthorizeHandler) Logout(c *fiber.Ctx) error {
 	authHeader := c.Get("Authorization")
 	if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {
@@ -121,7 +121,7 @@ type LogoutAllRequest struct {
 // @Param body body LogoutAllRequest true "Bloklanacaq istifadəçinin ID-si"
 // @Success 200 {string} string "All user tokens blacklisted"
 // @Failure 400 {string} string "user_id is required"
-// @Router /logout-all [post]
+// @Router /api/v1/authz/logout-all [post]
 func (h *AuthorizeHandler) LogoutAll(c *fiber.Ctx) error {
 	var req LogoutAllRequest
 	if err := c.BodyParser(&req); err != nil || req.UserID == "" {
