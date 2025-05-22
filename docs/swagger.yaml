@@ -119,7 +119,7 @@ paths:
             type: string
       summary: İstifadəçinin bütün tokenlərini bloklayır
       tags:
-      - Admin
+      - Authorization
   /permissions:
     get:
       produces:

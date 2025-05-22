@@ -139,7 +139,7 @@ const docTemplate = `{
                     "text/plain"
                 ],
                 "tags": [
-                    "Admin"
+                    "Authorization"
                 ],
                 "summary": "İstifadəçinin bütün tokenlərini bloklayır",
                 "parameters": [
