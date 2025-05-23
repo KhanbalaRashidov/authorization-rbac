@@ -1,19 +1,22 @@
 version: '3.9'
 
 services:
-
   ms-authz:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        DB_HOST: postgres
+        DB_NAME: authz
+        DB_USERNAME: postgres
+        DB_PASSWORD: secret
+        RABBITMQ_USER: guest
+        RABBITMQ_PASSWORD: guest
+        RABBITMQ_HOST: rabbitmq
+        PORT: 8080
     container_name: ms-authz
     ports:
-      - "8000:8000"
-    environment:
-      DB_DSN: host=postgres user=postgres password=secret dbname=authz sslmode=disable
-      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672/
-      PUBLIC_KEY_DIR: /app/keys
-      PORT: 8000
+      - "8080:8080"
     volumes:
       - ./keys:/app/keys:ro
       - ./docs:/app/docs:ro
